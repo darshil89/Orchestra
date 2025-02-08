@@ -18,7 +18,7 @@ export default function OrchestraLanding() {
 
   const startTasks = () => {
     setTasks((prevTasks) =>
-      prevTasks.map((task) => ({ ...task, status: "in-progress" }))
+      prevTasks.map((task) => ({ ...task, status: "in_progress" }))
     );
     setTimeout(() => {
       setTasks((prevTasks) =>
@@ -46,11 +46,6 @@ export default function OrchestraLanding() {
               <p>{task.description}</p>
               <p className="mt-2 text-sm text-gray-400">URLs: {task.function.length}</p>
             </div>
-            {task.status === "in-progress" && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 animate-pulse">
-                <span className="text-lg">Running...</span>
-              </div>
-            )}
           </div>
         ))}
       </div>
