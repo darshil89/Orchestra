@@ -8,5 +8,5 @@ export type Task = {
   }[];
 }[];
 
-type TaskStatus = "done" | "pending" | "in-progress";
+type TaskStatus = "done" | "stale" | "in_progress";
 
