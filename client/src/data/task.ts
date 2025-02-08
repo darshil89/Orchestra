@@ -7,8 +7,8 @@ import { Task } from "@/types/task";
 export const task: Task = [
   {
     id: 1,
-    title: "Github Push",
-    description: "Push a random data to a public repository on Github.",
+    title: "DB Push",
+    description: "Push a random data to the database.",
     status: "stale",
     function: [
       {

@@ -1,5 +1,6 @@
 "use client";
 import { task } from "@/data/task";
+import { postTask } from "@/server/api";
 import { Task } from "@/types/task";
 import { useState } from "react";
 
@@ -12,14 +13,17 @@ const statusColors : Record<string, string> = {
 };
 
 export default function OrchestraLanding() {
-  const [tasks, setTasks] = useState(
+  const [tasks, setTasks] = useState<Task>(
     initialTasks.map(task => ({ ...task, status: "stale" }))
   );
 
-  const startTasks = () => {
+  const startTasks = async () => {
     setTasks((prevTasks) =>
       prevTasks.map((task) => ({ ...task, status: "in-progress" }))
     );
+    const response = await postTask(tasks)
+
+    console.log("response from server:", response)
     setTimeout(() => {
       setTasks((prevTasks) =>
         prevTasks.map((task) => ({ ...task, status: "done" }))
