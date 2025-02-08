@@ -7,7 +7,7 @@ const initialTasks: Task = task;
 
 const statusColors : Record<string, string> = {
   stale: "border-gray-400",
-  in_progress: "border-yellow-400",
+  "in-progress": "border-yellow-400",
   done: "border-green-400",
 };
 
@@ -18,7 +18,7 @@ export default function OrchestraLanding() {
 
   const startTasks = () => {
     setTasks((prevTasks) =>
-      prevTasks.map((task) => ({ ...task, status: "in_progress" }))
+      prevTasks.map((task) => ({ ...task, status: "in-progress" }))
     );
     setTimeout(() => {
       setTasks((prevTasks) =>
@@ -42,7 +42,7 @@ export default function OrchestraLanding() {
           >
             <h2 className="text-2xl font-semibold">{task.title}</h2>
             <p className="text-lg text-gray-300">Status: {task.status}</p>
-            <div className="absolute inset-0 bg-black bg-opacity-90 p-6 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <div className="absolute inset-0 rounded-xl bg-black p-6 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
               <p>{task.description}</p>
               <p className="mt-2 text-sm text-gray-400">URLs: {task.function.length}</p>
             </div>
