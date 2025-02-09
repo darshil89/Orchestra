@@ -1,2 +1,1 @@
-## **Distributed Job Orchestration (CI/CD Pipelines, Data Processing
-)**
+## **Distributed Job Orchestration (CI/CD Pipelines, Data Processing)**
