@@ -49,35 +49,47 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	// create a queue and send the message
-	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
-	failOnError(err, "Failed to declare a queue")
+	queues := map[string]string{
+		"DB Push":        "DBTask",
+		"Dockerhub Push": "DockerhubTask",
+		"API Call":       "APITask",
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	for _, task := range data {
+		queueName, exists := queues[task.Title]
+		if !exists {
+			log.Printf("Unknown task type: %s", task.Title)
+			continue
+		}
 
-	body := "Hello World!"
-	err = ch.PublishWithContext(ctx,
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
-		})
-	failOnError(err, "Failed to publish a message")
-	log.Printf(" [x] Sent %s\n", body)
+		_, err := ch.QueueDeclare(
+			queueName, // Queue name
+			false,     // Durable
+			false,     // Delete when unused
+			false,     // Exclusive
+			false,     // No-wait
+			nil,       // Arguments
+		)
+		failOnError(err, "Failed to declare a queue")
 
-	// // print the request body
-	// fmt.Printf("Request Body: %v\n", data)
+		// Publish task to the correct queue
+		taskBody, _ := json.Marshal(task)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		err = ch.PublishWithContext(ctx,
+			"",        // Exchange
+			queueName, // Routing key (queue name)
+			false,     // Mandatory
+			false,     // Immediate
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        taskBody,
+			})
+		failOnError(err, "Failed to publish a message")
+
+		log.Printf(" [x] Sent task to %s: %s", queueName, taskBody)
+	}
 
 	responseWithJSON(w, http.StatusOK, "Task created successfully")
 
