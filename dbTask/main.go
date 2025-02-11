@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -51,7 +52,21 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
+			log.Printf("Received Task ")
+			time.Sleep(2 * time.Second) // Simulate processing time
+
+			// Send response back
+			err = ch.Publish(
+				"",        // exchange
+				d.ReplyTo, // response queue
+				false,     // mandatory
+				false,     // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte("Task completed: " + string("DB Task is done")),
+				})
+			failOnError(err, "Failed to send response")
+
 			// Acknowledge message after processing
 			d.Ack(false)
 		}

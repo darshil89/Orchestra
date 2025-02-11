@@ -55,6 +55,16 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		"API Call":       "APITask",
 	}
 
+	// Declare the response queue
+	responseQueue, err := ch.QueueDeclare(
+		"ResponseQueue", // queue name
+		false,           // durable
+		false,           // delete when unused
+		false,           // exclusive
+		false,           // no-wait
+		nil,             // arguments
+	)
+	failOnError(err, "Failed to declare response queue")
 	for _, task := range data {
 		queueName, exists := queues[task.Title]
 		if !exists {
@@ -85,12 +95,34 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 			amqp.Publishing{
 				ContentType: "application/json",
 				Body:        taskBody,
+				ReplyTo:     "ResponseQueue",
 			})
 		failOnError(err, "Failed to publish a message")
 
-		log.Printf(" [x] Sent task to %s: %s", queueName, taskBody)
+		log.Printf(" [x] Sent task to %s ", queueName)
 	}
 
-	responseWithJSON(w, http.StatusOK, "Task created successfully")
+	// Listen for responses
+	msgs, err := ch.Consume(
+		responseQueue.Name, // queue
+		"",                 // consumer
+		true,               // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
+	)
+	failOnError(err, "Failed to register consumer for response")
+
+	go func() {
+		for d := range msgs {
+			log.Printf("Received response: %s", d.Body)
+		}
+	}()
+
+	log.Println(" [*] Waiting for responses. To exit, press CTRL+C")
+	select {} // Keep running
+
+	// responseWithJSON(w, http.StatusOK, "Task created successfully")
 
 }
