@@ -54,18 +54,7 @@ func main() {
 		for d := range msgs {
 			log.Printf("Received Task ")
 			time.Sleep(2 * time.Second) // Simulate processing time
-
-			// Send response back
-			err = ch.Publish(
-				"",        // exchange
-				d.ReplyTo, // response queue
-				false,     // mandatory
-				false,     // immediate
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte("Task completed: " + string("DB Task is done")),
-				})
-			failOnError(err, "Failed to send response")
+			log.Printf("DB Task is done")
 
 			// Acknowledge message after processing
 			d.Ack(false)

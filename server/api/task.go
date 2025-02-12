@@ -56,14 +56,14 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Declare the response queue
-	responseQueue, err := ch.QueueDeclare(
-		"ResponseQueue", // queue name
-		false,           // durable
-		false,           // delete when unused
-		false,           // exclusive
-		false,           // no-wait
-		nil,             // arguments
-	)
+	// responseQueue, err := ch.QueueDeclare(
+	// 	"ResponseQueue", // queue name
+	// 	false,           // durable
+	// 	false,           // delete when unused
+	// 	false,           // exclusive
+	// 	false,           // no-wait
+	// 	nil,             // arguments
+	// )
 	failOnError(err, "Failed to declare response queue")
 	for _, task := range data {
 		queueName, exists := queues[task.Title]
@@ -102,27 +102,27 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf(" [x] Sent task to %s ", queueName)
 	}
 
-	// Listen for responses
-	msgs, err := ch.Consume(
-		responseQueue.Name, // queue
-		"",                 // consumer
-		true,               // auto-ack
-		false,              // exclusive
-		false,              // no-local
-		false,              // no-wait
-		nil,                // args
-	)
-	failOnError(err, "Failed to register consumer for response")
+	// // Listen for responses
+	// msgs, err := ch.Consume(
+	// 	responseQueue.Name, // queue
+	// 	"",                 // consumer
+	// 	true,               // auto-ack
+	// 	false,              // exclusive
+	// 	false,              // no-local
+	// 	false,              // no-wait
+	// 	nil,                // args
+	// )
+	// failOnError(err, "Failed to register consumer for response")
 
-	go func() {
-		for d := range msgs {
-			log.Printf("Received response: %s", d.Body)
-		}
-	}()
+	// go func() {
+	// 	for d := range msgs {
+	// 		log.Printf("Received response: %s", d.Body)
+	// 	}
+	// }()
 
-	log.Println(" [*] Waiting for responses. To exit, press CTRL+C")
-	select {} // Keep running
+	// log.Println(" [*] Waiting for responses. To exit, press CTRL+C")
+	// select {} // Keep running
 
-	// responseWithJSON(w, http.StatusOK, "Task created successfully")
+	responseWithJSON(w, http.StatusOK, "Task created successfully")
 
 }

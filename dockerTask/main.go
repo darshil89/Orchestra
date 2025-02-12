@@ -54,18 +54,19 @@ func main() {
 		for d := range msgs {
 			log.Printf("Received Task")
 			time.Sleep(10 * time.Second) // Simulate processing time
+			log.Printf("Docker Task is done")
 
 			// Send response back
-			err = ch.Publish(
-				"",        // exchange
-				d.ReplyTo, // response queue
-				false,     // mandatory
-				false,     // immediate
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte("Task completed: " + string("Docker Task is done")),
-				})
-			failOnError(err, "Failed to send response")
+			// err = ch.Publish(
+			// 	"",        // exchange
+			// 	d.ReplyTo, // response queue
+			// 	false,     // mandatory
+			// 	false,     // immediate
+			// 	amqp.Publishing{
+			// 		ContentType: "text/plain",
+			// 		Body:        []byte("Task completed: " + string("Docker Task is done")),
+			// 	})
+			// failOnError(err, "Failed to send response")
 
 			// Acknowledge message after processing
 			d.Ack(false)

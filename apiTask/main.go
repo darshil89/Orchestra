@@ -54,18 +54,19 @@ func main() {
 		for d := range msgs {
 			log.Printf("Received Task")
 			time.Sleep(5 * time.Second) // Simulate processing time
+			log.Printf("API Task is done")
 
-			// Send response back
-			err = ch.Publish(
-				"",        // exchange
-				d.ReplyTo, // response queue
-				false,     // mandatory
-				false,     // immediate
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte("Task completed: " + string("API Task is done")),
-				})
-			failOnError(err, "Failed to send response")
+			// // Send response back
+			// err = ch.Publish(
+			// 	"",        // exchange
+			// 	d.ReplyTo, // response queue
+			// 	false,     // mandatory
+			// 	false,     // immediate
+			// 	amqp.Publishing{
+			// 		ContentType: "text/plain",
+			// 		Body:        []byte("Task completed: " + string("API Task is done")),
+			// 	})
+			// failOnError(err, "Failed to send response")
 
 			// Acknowledge message after processing
 			d.Ack(false)
