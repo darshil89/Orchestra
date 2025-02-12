@@ -5,7 +5,6 @@ import (
 	"db/models"
 	"encoding/json"
 	"log"
-	"strconv"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -74,13 +73,26 @@ func main() {
 				continue
 			}
 
-			log.Printf("Processing Task: %s", d.Title)
-			rdb.Publish(ctx, "task-status", `{"task_id": "`+strconv.Itoa(d.ID)+`", "status": "processing"}`)
+			log.Printf("🚀 Processing Task: %s (ID: %d)", d.Title, d.ID)
 
-			time.Sleep(2 * time.Second) // Simulate processing
+			// Publish "processing" status to Redis
+			statusUpdate := models.Task{
+				ID:          d.ID,
+				Title:       d.Title,
+				Status:      models.InProgress,
+				Description: d.Description,
+				Function:    d.Function,
+			}
+			publishToRedis(rdb, "task-status", statusUpdate)
 
-			log.Printf("Task %s completed", d.Title)
-			rdb.Publish(ctx, "task-status", `{"task_id": "`+strconv.Itoa(d.ID)+`", "status": "completed"}`)
+			// Simulate task processing
+			time.Sleep(5 * time.Second)
+
+			// Publish "completed" status to Redis
+			statusUpdate.Status = models.Done
+			publishToRedis(rdb, "task-status", statusUpdate)
+
+			log.Printf("✅ Task %s completed", d.Title)
 
 			// Acknowledge message after processing
 			msg.Ack(false)
@@ -89,4 +101,14 @@ func main() {
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+}
+
+// Function to properly format and publish messages to Redis
+func publishToRedis(client *redis.Client, channel string, message models.Task) {
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("❌ Error encoding JSON: %s", err)
+		return
+	}
+	client.Publish(ctx, channel, jsonMsg)
 }

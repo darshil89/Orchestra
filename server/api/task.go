@@ -107,10 +107,11 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		defer pubsub.Close()
 
 		for msg := range pubsub.Channel() {
-			var data map[string]string
+			var data models.Task
 			json.Unmarshal([]byte(msg.Payload), &data)
 
 			log.Printf("Forwarded Redis event to clients: %v", data)
+			defer rdb.Close()
 		}
 	}()
 
