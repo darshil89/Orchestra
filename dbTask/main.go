@@ -1,11 +1,18 @@
 package main
 
 import (
+	"context"
+	"db/models"
+	"encoding/json"
 	"log"
+	"strconv"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 )
+
+var ctx = context.Background()
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -47,17 +54,36 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
+	// Connect to Redis
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	// Create a channel to keep the program running
 	forever := make(chan struct{})
 
 	go func() {
-		for d := range msgs {
-			log.Printf("Received Task ")
-			time.Sleep(2 * time.Second) // Simulate processing time
-			log.Printf("DB Task is done")
+		for msg := range msgs {
+			var d models.Task
+			err := json.Unmarshal(msg.Body, &d)
+			if err != nil {
+				log.Printf("Error decoding JSON: %s", err)
+				msg.Nack(false, true)
+				continue
+			}
+
+			log.Printf("Processing Task: %s", d.Title)
+			rdb.Publish(ctx, "task-status", `{"task_id": "`+strconv.Itoa(d.ID)+`", "status": "processing"}`)
+
+			time.Sleep(2 * time.Second) // Simulate processing
+
+			log.Printf("Task %s completed", d.Title)
+			rdb.Publish(ctx, "task-status", `{"task_id": "`+strconv.Itoa(d.ID)+`", "status": "completed"}`)
 
 			// Acknowledge message after processing
-			d.Ack(false)
+			msg.Ack(false)
 		}
 	}()
 

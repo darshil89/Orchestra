@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"server/models"
 	"time"
 
-	models "server/models"
+	"github.com/redis/go-redis/v9"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+var ctx = context.Background()
 
 func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -34,6 +37,12 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	var data models.Tasks
 	err := json.NewDecoder(r.Body).Decode(&data)
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	if err != nil {
 		responseWithError(w, http.StatusInternalServerError, "Invalid request payload")
 		return
@@ -55,15 +64,6 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		"API Call":       "APITask",
 	}
 
-	// Declare the response queue
-	// responseQueue, err := ch.QueueDeclare(
-	// 	"ResponseQueue", // queue name
-	// 	false,           // durable
-	// 	false,           // delete when unused
-	// 	false,           // exclusive
-	// 	false,           // no-wait
-	// 	nil,             // arguments
-	// )
 	failOnError(err, "Failed to declare response queue")
 	for _, task := range data {
 		queueName, exists := queues[task.Title]
@@ -102,26 +102,17 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf(" [x] Sent task to %s ", queueName)
 	}
 
-	// // Listen for responses
-	// msgs, err := ch.Consume(
-	// 	responseQueue.Name, // queue
-	// 	"",                 // consumer
-	// 	true,               // auto-ack
-	// 	false,              // exclusive
-	// 	false,              // no-local
-	// 	false,              // no-wait
-	// 	nil,                // args
-	// )
-	// failOnError(err, "Failed to register consumer for response")
+	go func() {
+		pubsub := rdb.Subscribe(ctx, "task-status")
+		defer pubsub.Close()
 
-	// go func() {
-	// 	for d := range msgs {
-	// 		log.Printf("Received response: %s", d.Body)
-	// 	}
-	// }()
+		for msg := range pubsub.Channel() {
+			var data map[string]string
+			json.Unmarshal([]byte(msg.Payload), &data)
 
-	// log.Println(" [*] Waiting for responses. To exit, press CTRL+C")
-	// select {} // Keep running
+			log.Printf("Forwarded Redis event to clients: %v", data)
+		}
+	}()
 
 	responseWithJSON(w, http.StatusOK, "Task created successfully")
 

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"time"
+
+	"api/models"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -51,25 +54,17 @@ func main() {
 	forever := make(chan struct{})
 
 	go func() {
-		for d := range msgs {
+		for msg := range msgs {
 			log.Printf("Received Task")
+			var d models.Task
+			err := json.Unmarshal(msg.Body, &d)
+			if err != nil {
+				log.Printf("Failed to unmarshal task: %s", err)
+			}
 			time.Sleep(5 * time.Second) // Simulate processing time
-			log.Printf("API Task is done")
+			log.Printf("%s", "API Task is done "+d.Title)
 
-			// // Send response back
-			// err = ch.Publish(
-			// 	"",        // exchange
-			// 	d.ReplyTo, // response queue
-			// 	false,     // mandatory
-			// 	false,     // immediate
-			// 	amqp.Publishing{
-			// 		ContentType: "text/plain",
-			// 		Body:        []byte("Task completed: " + string("API Task is done")),
-			// 	})
-			// failOnError(err, "Failed to send response")
-
-			// Acknowledge message after processing
-			d.Ack(false)
+			msg.Ack(false)
 		}
 	}()
 
