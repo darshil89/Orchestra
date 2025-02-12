@@ -15,6 +15,10 @@
 
 ## 🏗️ Architecture
 
+---
+![Mail](https://drive.google.com/file/d/1SFGdy9O0Kg2oIHzalqJxqaDt6DfGzKh6/view)
+---
+
 1. **Task Producer (Client)**
    - A frontend app (React) or a service sends a task request to the backend.
 2. **Backend (Task Manager)**
