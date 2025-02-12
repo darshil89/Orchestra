@@ -28,6 +28,7 @@ func responseWithError(w http.ResponseWriter, code int, msg string) {
 func main() {
 	r := chi.NewRouter()
 
+	// Start Redis listener to publish updates to WebSocket
 	go handler.StartRedisListener()
 
 	r.Use(cors.Handler(cors.Options{
@@ -42,6 +43,8 @@ func main() {
 
 	r.Get("/", welcome)
 	r.Post("/task", handler.TaskHandler)
+	// Register WebSocket route
+	r.Get("/ws", handler.WebSocketHandler)
 
 	fmt.Printf("Server started at http://localhost:8080\n")
 	log.Fatal(http.ListenAndServe(":8080", r))

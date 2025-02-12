@@ -126,5 +126,7 @@ func StartRedisListener() {
 		}
 
 		log.Printf("🔄 Task Update from Redis: %v", data)
+		jsonData, _ := json.Marshal(data)
+		broadcastToClients(jsonData)
 	}
 }
