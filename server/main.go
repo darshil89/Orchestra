@@ -28,6 +28,8 @@ func responseWithError(w http.ResponseWriter, code int, msg string) {
 func main() {
 	r := chi.NewRouter()
 
+	go handler.StartRedisListener()
+
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

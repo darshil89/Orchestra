@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -8,7 +9,10 @@ import (
 	"api/models"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 )
+
+var ctx = context.Background()
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -50,19 +54,40 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
+	// Connect to Redis
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	// Create a channel to keep the program running
 	forever := make(chan struct{})
 
 	go func() {
 		for msg := range msgs {
-			log.Printf("Received Task")
 			var d models.Task
 			err := json.Unmarshal(msg.Body, &d)
 			if err != nil {
 				log.Printf("Failed to unmarshal task: %s", err)
 			}
+			log.Printf("🚀 Processing Task: %s (ID: %d)", d.Title, d.ID)
+			// publishing to redis
+			// Publish "processing" status to Redis
+			statusUpdate := models.Task{
+				ID:          d.ID,
+				Title:       d.Title,
+				Status:      models.InProgress,
+				Description: d.Description,
+				Function:    d.Function,
+			}
+			publishToRedis(rdb, "task-status", statusUpdate)
+
 			time.Sleep(5 * time.Second) // Simulate processing time
-			log.Printf("%s", "API Task is done "+d.Title)
+
+			statusUpdate.Status = models.Done
+			publishToRedis(rdb, "task-status", statusUpdate)
+			log.Printf("✅ Task %s completed", d.Title)
 
 			msg.Ack(false)
 		}
@@ -70,4 +95,14 @@ func main() {
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+}
+
+// Function to properly format and publish messages to Redis
+func publishToRedis(client *redis.Client, channel string, message models.Task) {
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("❌ Error encoding JSON: %s", err)
+		return
+	}
+	client.Publish(ctx, channel, jsonMsg)
 }

@@ -15,6 +15,17 @@ import (
 
 var ctx = context.Background()
 
+var rdb *redis.Client
+
+func init() {
+	// Initialize Redis Client once
+	rdb = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+}
+
 func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -36,12 +47,6 @@ func failOnError(err error, msg string) {
 func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	var data models.Tasks
 	err := json.NewDecoder(r.Body).Decode(&data)
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
 
 	if err != nil {
 		responseWithError(w, http.StatusInternalServerError, "Invalid request payload")
@@ -99,22 +104,27 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 			})
 		failOnError(err, "Failed to publish a message")
 
-		log.Printf(" [x] Sent task to %s ", queueName)
+		log.Printf("📤 Task sent to queue %s", queueName)
 	}
-
-	go func() {
-		pubsub := rdb.Subscribe(ctx, "task-status")
-		defer pubsub.Close()
-
-		for msg := range pubsub.Channel() {
-			var data models.Task
-			json.Unmarshal([]byte(msg.Payload), &data)
-
-			log.Printf("Forwarded Redis event to clients: %v", data)
-			defer rdb.Close()
-		}
-	}()
 
 	responseWithJSON(w, http.StatusOK, "Task created successfully")
 
+}
+
+// ✅ Move Redis Subscription to Server Startup
+func StartRedisListener() {
+	log.Println("🚀 Redis listener started")
+	pubsub := rdb.Subscribe(ctx, "task-status")
+	defer pubsub.Close()
+
+	log.Println("📡 Listening for task status updates from Redis...")
+	for msg := range pubsub.Channel() {
+		var data models.Task
+		if err := json.Unmarshal([]byte(msg.Payload), &data); err != nil {
+			log.Printf("❌ Failed to decode Redis message: %s", err)
+			continue
+		}
+
+		log.Printf("🔄 Task Update from Redis: %v", data)
+	}
 }
