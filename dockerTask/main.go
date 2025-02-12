@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
+	"docker/models"
+	"encoding/json"
 	"log"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 )
+
+var ctx = context.Background()
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -47,32 +53,55 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
+	// Connect to Redis
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	// Create a channel to keep the program running
 	forever := make(chan struct{})
 
 	go func() {
-		for d := range msgs {
-			log.Printf("Received Task")
+		for msg := range msgs {
+			var d models.Task
+			err := json.Unmarshal(msg.Body, &d)
+			if err != nil {
+				log.Printf("Failed to unmarshal task: %s", err)
+			}
+			log.Printf("🚀 Processing Task: %s (ID: %d)", d.Title, d.ID)
+			// publishing to redis
+			// Publish "processing" status to Redis
+			statusUpdate := models.Task{
+				ID:          d.ID,
+				Title:       d.Title,
+				Status:      models.InProgress,
+				Description: d.Description,
+				Function:    d.Function,
+			}
+			publishToRedis(rdb, "task-status", statusUpdate)
+
 			time.Sleep(10 * time.Second) // Simulate processing time
-			log.Printf("Docker Task is done")
 
-			// Send response back
-			// err = ch.Publish(
-			// 	"",        // exchange
-			// 	d.ReplyTo, // response queue
-			// 	false,     // mandatory
-			// 	false,     // immediate
-			// 	amqp.Publishing{
-			// 		ContentType: "text/plain",
-			// 		Body:        []byte("Task completed: " + string("Docker Task is done")),
-			// 	})
-			// failOnError(err, "Failed to send response")
+			statusUpdate.Status = models.Done
+			publishToRedis(rdb, "task-status", statusUpdate)
+			log.Printf("✅ Task %s completed", d.Title)
 
-			// Acknowledge message after processing
-			d.Ack(false)
+			msg.Ack(false)
 		}
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+}
+
+// Function to properly format and publish messages to Redis
+func publishToRedis(client *redis.Client, channel string, message models.Task) {
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("❌ Error encoding JSON: %s", err)
+		return
+	}
+	client.Publish(ctx, channel, jsonMsg)
 }

@@ -86,7 +86,7 @@ func main() {
 			publishToRedis(rdb, "task-status", statusUpdate)
 
 			// Simulate task processing
-			time.Sleep(5 * time.Second)
+			time.Sleep(2 * time.Second)
 
 			// Publish "completed" status to Redis
 			statusUpdate.Status = models.Done
