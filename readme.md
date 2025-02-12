@@ -16,7 +16,7 @@
 ## 🏗️ Architecture
 
 ---
-![Mail](https://drive.google.com/file/d/1SFGdy9O0Kg2oIHzalqJxqaDt6DfGzKh6/view)
+![Architecture](https://res.cloudinary.com/dmvelqjem/image/upload/v1739379547/aiwdzti8dnwdeiuptcla.png)
 ---
 
 1. **Task Producer (Client)**
