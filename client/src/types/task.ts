@@ -6,7 +6,9 @@ export type Task = {
   function: {
     url: string;
   }[];
-}[];
+}
+
+export type Tasks = Task[];
 
 type TaskStatus = "done" | "stale" | "in-progress";
 

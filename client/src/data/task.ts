@@ -2,9 +2,9 @@
 // pushing an image to dockerhub.
 // calling an api.
 
-import { Task } from "@/types/task";
+import { Tasks } from "@/types/task";
 
-export const task: Task = [
+export const task: Tasks = [
   {
     id: 1,
     title: "DB Push",

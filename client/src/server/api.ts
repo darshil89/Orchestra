@@ -1,9 +1,9 @@
 "use client"
-import { Task } from "@/types/task";
+import { Tasks } from "@/types/task";
 import { API_URL } from "@/utils/db";
 
 
-export async function postTask(task: Task): Promise<Task> {
+export async function postTask(task: Tasks): Promise<Tasks> {
   const response = await fetch(`${API_URL}/task`, {
     method: "POST",
     headers: {

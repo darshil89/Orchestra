@@ -1,39 +1,73 @@
 "use client";
 import { task } from "@/data/task";
 import { postTask } from "@/server/api";
-import { Task } from "@/types/task";
-import { useState } from "react";
+import { Tasks } from "@/types/task";
+import { useState, useEffect } from "react";
 
-const initialTasks: Task = task;
+const initialTasks: Tasks = task;
 
-const statusColors : Record<string, string> = {
+const statusColors: Record<string, string> = {
   stale: "border-gray-400",
   "in-progress": "border-yellow-400",
   done: "border-green-400",
 };
 
 export default function OrchestraLanding() {
-  const [tasks, setTasks] = useState<Task>(
+  const [tasks, setTasks] = useState<Tasks>(
     initialTasks.map(task => ({ ...task, status: "stale" }))
   );
 
   const startTasks = async () => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => ({ ...task, status: "in-progress" }))
-    );
+
     const response = await postTask(tasks)
 
     console.log("response from server:", response)
-    setTimeout(() => {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => ({ ...task, status: "done" }))
-      );
-    }, 3000);
   };
 
   const resetTasks = () => {
     setTasks(initialTasks.map(task => ({ ...task, status: "stale" })));
   };
+
+  useEffect(() => {
+    // connect the websocket 
+
+    const ws = new WebSocket("ws://localhost:8080/ws");
+
+    ws.onopen = () => {
+      console.log("Connected to websocket");
+    }
+
+    ws.onmessage = (event) => {
+      console.log("Message from server:", event.data);
+      const data = JSON.parse(event.data);
+
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id === data.id) {
+            return { ...task, status: data.status }
+          }
+          return task
+
+        }
+        )
+      )
+
+    }
+
+    ws.onerror = (error) => {
+      console.error("⚠️ WebSocket Error:", error);
+    };
+
+    ws.onclose = () => {
+      console.warn("⚠️ WebSocket Disconnected, attempting to reconnect...");
+
+    };
+
+    return () => {
+      ws.close();
+    };
+
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-6">
