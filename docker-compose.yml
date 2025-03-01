@@ -7,35 +7,68 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672" # Management UI
+    networks:
+      - orchestra_net
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis
-    ports:
-      - "6379:6379"
+    networks:
+      - orchestra_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   api-task:
     build:
       context: ./apiTask
       dockerfile: Dockerfile
     depends_on:
-      - rabbitmq
-      - redis
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - orchestra_net
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/
 
   docker-task:
     build:
       context: ./dockerTask
       dockerfile: Dockerfile
     depends_on:
-      - rabbitmq
-      - redis
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - orchestra_net
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/
 
   db-task:
     build:
       context: ./dbTask
       dockerfile: Dockerfile
     depends_on:
-      - rabbitmq
-      - redis
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - orchestra_net
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/
 
   main-server:
     build:
@@ -44,8 +77,22 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - api-task
-      - db-task
-      - docker-task
-      - redis
-      - rabbitmq
+      api-task:
+        condition: service_started
+      db-task:
+        condition: service_started
+      docker-task:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - orchestra_net
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: redis://redis:6379/
+
+networks:
+  orchestra_net:
+    driver: bridge

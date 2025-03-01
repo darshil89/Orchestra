@@ -54,7 +54,7 @@ func TaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// connect to RabbitMQ server
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
