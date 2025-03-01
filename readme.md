@@ -1,5 +1,9 @@
 # 🎼 Orchestra - Distributed Job Orchestration
 
+---
+![Orchestra](https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHpqbnp0NDlhOWxoNzl1NDRiNmMzNHY1eG15ZnZ1a2pjMnJmaXNrZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3orif1pbd3IFsbz8TS/giphy.gif)
+---
+
 ## 🚀 Overview
 
 **Orchestra** is a **distributed job orchestration system** designed for **CI/CD pipeline execution** and **data processing** tasks. It efficiently manages task execution across multiple workers using a **message queue**, enabling parallel execution and real-time status updates.
@@ -14,6 +18,10 @@
 - **Scalable & Flexible Architecture**: Easily integrates with Docker, Kubernetes, and cloud platforms.
 
 ## 🏗️ Architecture
+
+---
+![Architecture](https://res.cloudinary.com/dmvelqjem/image/upload/v1739379547/aiwdzti8dnwdeiuptcla.png)
+---
 
 1. **Task Producer (Client)**
    - A frontend app (React) or a service sends a task request to the backend.
