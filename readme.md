@@ -48,6 +48,7 @@ cd orchestra
 ```
 
 ### 2️⃣ Start RabbitMQ & Redis (Docker)
+Before starting any other services, ensure that RabbitMQ and Redis are running:
 ```sh
 docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
 docker run -d --name redis -p 6379:6379 redis
@@ -66,10 +67,9 @@ npm run dev
 ```
 
 ### 5️⃣ Run Worker Nodes
+Make sure RabbitMQ and Redis are still running, then start the worker nodes:
 ```sh
 docker-compose up worker
-docker run -d --name redis -p 6379:6379 redis
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
 ```
 
 ## 📡 WebSocket Integration

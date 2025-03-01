@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  api-task:
+    build:
+      context: ./apiTask
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - redis
+
+  docker-task:
+    build:
+      context: ./dockerTask
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - redis
+
+  db-task:
+    build:
+      context: ./dbTask
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - redis
+
+  main-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api-task
+      - db-task
+      - docker-task
+      - redis
+      - rabbitmq

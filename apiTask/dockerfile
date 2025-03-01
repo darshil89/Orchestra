@@ -15,8 +15,5 @@ RUN CGO_ENABLED=0 GOARCH=${TARGETARCH} go build -o /bin/server .
 # Giving permission
 RUN chmod +x /bin/server
 
-# Expose the port
-EXPOSE 8080
-
 # Run the application
 CMD ["/bin/server"]
