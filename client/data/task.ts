@@ -1,7 +1,3 @@
-// pushing random data to github.
-// pushing an image to dockerhub.
-// calling an api.
-
 import { Tasks } from "@/types/task";
 
 export const task: Tasks = [
@@ -10,6 +6,7 @@ export const task: Tasks = [
     title: "DB Push",
     description: "Push a random data to the database.",
     status: "stale",
+    animationState: "idle",
     function: [
       {
         url: "",
@@ -20,6 +17,7 @@ export const task: Tasks = [
     title: "Dockerhub Push",
     description: "Push an public image to Dockerhub.",
     status: "stale",
+    animationState: "idle",
     function: [
       {
         url: "",
@@ -34,6 +32,7 @@ export const task: Tasks = [
     title: "API Call",
     description: "Make a GET/POST request to an API.",
     status: "stale",
+    animationState: "idle",
     function: [
       {
         url: "",
