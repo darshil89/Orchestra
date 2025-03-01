@@ -55,7 +55,7 @@ func main() {
 
 	// Connect to Redis
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -103,5 +103,9 @@ func publishToRedis(client *redis.Client, channel string, message models.Task) {
 		log.Printf("❌ Error encoding JSON: %s", err)
 		return
 	}
-	client.Publish(ctx, channel, jsonMsg)
+
+	err = client.Publish(ctx, channel, jsonMsg).Err()
+	if err != nil {
+		log.Printf("❌ Failed to publish to Redis: %s", err)
+	}
 }
